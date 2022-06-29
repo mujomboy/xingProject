@@ -1,0 +1,9 @@
+certifi==2022.6.15
+pip==21.2.4
+PyQt5==5.15.7
+PyQt5-Qt5==5.15.2
+PyQt5-sip==12.11.0
+pywin32==304
+setuptools==61.2.0
+wheel==0.37.1
+wincertstore==0.2
