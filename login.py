@@ -1,9 +1,9 @@
 import pythoncom
-import win32com.client
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QWidget, QLabel, QHBoxLayout, QLineEdit, QPushButton, QRadioButton
+from PyQt5.QtWidgets import QWidget, QLabel, QHBoxLayout, QLineEdit, QPushButton, QRadioButton, QTabWidget
 
 from admin import Conn
+from event.session import SessionEvents
 
 
 class Login(QWidget):
@@ -20,14 +20,14 @@ class Login(QWidget):
 
         self.txt_id = QLineEdit("")                 # 아이디 에디트 생성
         self.txt_pw = QLineEdit("")                 # 패스워드 에디트 생성
-        self.txt_port = QLineEdit("200001")               # 포트 에디트 생성
-        self.txt_cert = QLineEdit()               # 인증서 에디트 생성
+        self.txt_port = QLineEdit("200001")         # 포트 에디트 생성
+        self.txt_cert = QLineEdit()                 # 인증서 에디트 생성
 
         self.rdo_real = QRadioButton("실제투자")
         self.rdo_vir = QRadioButton("모의투자")
         self.rdo_vir.setChecked(True)
 
-        btn_login = QPushButton("LOGIN")    # 로그인 버튼
+        self.btn_login = QPushButton("LOGIN")    # 로그인 버튼
 
         lbl_id.setAlignment(Qt.AlignCenter)
         lbl_pw.setAlignment(Qt.AlignCenter)
@@ -45,25 +45,23 @@ class Login(QWidget):
         self.layout_main.addWidget(self.txt_cert)
         self.layout_main.addWidget(self.rdo_real)
         self.layout_main.addWidget(self.rdo_vir)
-        self.layout_main.addWidget(btn_login)
+        self.layout_main.addWidget(self.btn_login)
 
         # 버튼 클릭 시 호출할 함수 연결
-        btn_login.clicked.connect(self.login_clicked)
-
-        # 세션 객체 받아올 변수
-        self.session = None
+        self.btn_login.clicked.connect(self.login_clicked)
 
     # 세션 생성
     def create_XASession(self):
         Conn().get_msg().add_msg(self, "Check XASession state")
 
-        # 세션 생성
-        if self.session is None:
+        # 세션 객체 생성 여부 확인
+        if not Conn().is_session():
             Conn().get_msg().add_msg(self, "Create XASession")
-            # 세션 객체 요청 및 객체 등록
-            self.session = win32com.client.DispatchWithEvents("XA_Session.XASession", SessionEvents)
+            # 세션 객체 생성
+            Conn().get_session()
+
         # 서버 연결 여부 확인
-        elif self.session.IsConnected():
+        elif Conn().get_session().IsConnected():
             Conn().get_msg().add_msg(self, "Server is Connected")
             # 서버 끊기
             self.disconnect_server()
@@ -71,7 +69,7 @@ class Login(QWidget):
     # 서버 끊기
     def disconnect_server(self):
         Conn().get_msg().add_msg(self, 'Disconnected server')
-        self.session.DisconnectServer()
+        Conn().get_session().DisconnectServer()
         SessionEvents.state = ""
         SessionEvents.msg = ""
 
@@ -88,7 +86,7 @@ class Login(QWidget):
         Conn().get_msg().add_msg(self, "PORT : " + self.txt_port.text())
 
         # 서버 연결 요청 (URL, 포트 번호 전달)
-        result = self.session.ConnectServer(url, int(self.txt_port.text()))
+        result = Conn().get_session().ConnectServer(url, int(self.txt_port.text()))
 
         # 연결 여부 확인
         if not result:
@@ -97,11 +95,13 @@ class Login(QWidget):
             Conn().get_msg().add_msg(self, "Connect Failed")
             Conn().get_msg().add_msg(self, "Error Code : " + info[0])
             Conn().get_msg().add_msg(self, "Error Msg : " + info[1])
-            if self.session.IsConnected():
+            if Conn().get_session().IsConnected():
                 self.disconnect_server()
-            return
+
+            return False
 
         Conn().get_msg().add_msg(self, "Server Connect Success")
+        return True
 
     # 로그인 진행
     def login(self):
@@ -113,14 +113,17 @@ class Login(QWidget):
         Conn().get_msg().add_msg(self, "CERT : " + self.txt_cert.text())
 
         # 세션 로그인 요청
-        self.session.Login(self.txt_id.text(), self.txt_pw.text(), self.txt_cert.text(), 0, 0)
+        Conn().get_session().Login(self.txt_id.text(), self.txt_pw.text(), self.txt_cert.text(), 0, 0)
 
         Conn().get_msg().add_msg(self, 'Wait....')
         while SessionEvents.state == "":
             # 로그인 상태 변경 메시지 채크
             pythoncom.PumpWaitingMessages()
 
+        is_success = False
+
         if SessionEvents.state == "0000":
+            is_success = True
             Conn().get_msg().add_msg(self, 'Login Success')
         else:
             Conn().get_msg().add_msg(self, "Login Failed")
@@ -129,35 +132,32 @@ class Login(QWidget):
 
         Conn().get_msg().add_msg(self, "========== END =============\n")
 
+        return is_success
+
     def login_clicked(self):
+
+        # 로그인 진행중... 버튼 비활성화
+        self.btn_login.setEnabled(False)
+
+        # 탭 비활성화
+        Conn().get_tap().setEnabled(False)
+
         # 세션 생성
         self.create_XASession()
 
         # 서버 연결
-        self.connect_server()
+        if not self.connect_server():
+            return
 
-        # 로그인 진행
-        self.login()
+        # 로그인 진행 (성공 시 탭 활성화)
+        if self.login():
+            Conn().get_tap().setEnabled(True)
 
-        for i in range(self.session.GetAccountListCount()):
-            Conn().get_msg().add_msg(self, self.session.GetAccountList(i))
+        # 로그인 진행완료.. 버튼 활성화
+        self.btn_login.setEnabled(True)
 
     def get_error_info(self):
         code = Conn().get_session().GetLastError()
-        return [code, self.session.GetErrorMessage(code)]
+        return [code, Conn().get_session().GetErrorMessage(code)]
 
-# 세션 클래스
-class SessionEvents:
 
-    state = ""
-    msg = ""
-
-    def OnLogin(self, code, msg):
-        SessionEvents.state = code
-        SessionEvents.msg = msg
-
-    def OnLogout(self):
-        print("OnLogout")
-
-    def OnDisconnect(self):
-        print("OnDisconnect")
