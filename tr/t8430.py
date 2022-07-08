@@ -19,7 +19,7 @@ class t8430(QWidget):
 
         self.table = QTableWidget()             # 데이터를 삽입할 테이블 위젯 생성
         self.table.setColumnCount(4)            # 항목 개수 지정
-        self.table.setHorizontalHeaderLabels(["종목명", "종목코드", "구분1", "구분2"]) # 테이블 항목명
+        self.table.setHorizontalHeaderLabels(["종목명", "종목코드", "거래소", "파생상품여부"]) # 테이블 항목명
 
         self.mainLayout.addLayout(self.subLayout)   # 메인레이아웃에 서브 레이아웃 배치
         self.mainLayout.addWidget(self.table)       # 메인레이아웃에 테이블 레이아웃 배치
@@ -69,5 +69,10 @@ class t8430(QWidget):
             # 테이블에 데이터 삽입
             self.table.setItem(i, 0, QTableWidgetItem(name))
             self.table.setItem(i, 1, QTableWidgetItem(code))
-            self.table.setItem(i, 2, QTableWidgetItem(gubun1))
-            self.table.setItem(i, 3, QTableWidgetItem(gubun2))
+            if gubun1 == "1":
+                self.table.setItem(i, 2, QTableWidgetItem("코스피"))
+            else:
+                self.table.setItem(i, 2, QTableWidgetItem("코스닥"))
+
+            if gubun2 != "0":
+                self.table.setItem(i, 3, QTableWidgetItem("파생상품"))

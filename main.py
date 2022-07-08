@@ -8,6 +8,8 @@ from login import Login
 from msg import Msg
 from tr.t8424 import t8424
 from tr.t8430 import t8430
+from tr.t8412 import t8412
+
 
 
 class MainScreen(QMainWindow):
@@ -35,6 +37,7 @@ class MainScreen(QMainWindow):
 
         self.mainTab.addTab(t8424(), "업종전체조회")                        # 업종전체조회 위젯 추가
         self.mainTab.addTab(t8430(), "주식종목조회")  # 주식종목조회 위젯 추가
+        self.mainTab.addTab(t8412(), "주식챠트(N분)데이터조회")  # 주식챠트(N분)데이터조회
 
         self.show()
 
