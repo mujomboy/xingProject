@@ -1,12 +1,13 @@
 # 세션 클래스
 class SessionEvents:
 
-    state = ""
-    msg = ""
+    def __init__(self):
+        self.state = ""
+        self.msg = ""
 
     def OnLogin(self, code, msg):
-        SessionEvents.state = code
-        SessionEvents.msg = msg
+        self.state = code
+        self.msg = msg
 
     def OnLogout(self):
         print("OnLogout")

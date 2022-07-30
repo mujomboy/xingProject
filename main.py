@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QTa
 from admin import Conn
 from login import Login
 from msg import Msg
+from tr.t8412_chart import t8412_chart
 from tr.t8424 import t8424
 from tr.t8430 import t8430
 from tr.t8412 import t8412
@@ -28,19 +29,27 @@ class MainScreen(QMainWindow):
         self.mainLayout.addWidget(self.mainTab)             # 메인 레이아웃에 텝 위젯 추가
         self.setCentralWidget(self.mainWidget)              # 메인윈도우 센트럴위젯에 메인 위젯 연결
 
-        Conn().set_msg(Msg(int(hei * .15)))  # 메시지 객체 Conn 에 전달
+        msg = Msg(int(hei * .15))
+        Conn().set_msg(msg)  # 메시지 객체 Conn 에 전달
         Conn().set_tap(self.mainTab)  # 탭 객체 Conn 에 전달
 
-        self.mainLayout.addWidget(Conn().get_msg())         # 메시지 클래스 새성 및 레이아웃에 추가
+        self.mainLayout.addWidget(msg)         # 메시지 클래스 새성 및 레이아웃에 추가
 
         self.mainTab.setEnabled(False)                      # 탭 비활성화
 
-        self.mainTab.addTab(t8424(), "업종전체조회")                        # 업종전체조회 위젯 추가
-        self.mainTab.addTab(t8430(), "주식종목조회")  # 주식종목조회 위젯 추가
-        self.mainTab.addTab(t8412(), "주식챠트(N분)데이터조회")  # 주식챠트(N분)데이터조회
+        self.set_tr()                                           # tr 세팅
 
         self.show()
 
+    def set_tr(self):
+        tr_t8430 = t8430()
+
+        self.mainTab.addTab(t8424(), "업종전체조회")  # 업종전체조회 위젯 추가
+        self.mainTab.addTab(tr_t8430, "주식종목조회")  # 주식종목조회 위젯 추가
+        self.mainTab.addTab(t8412(), "주식챠트(N분)데이터조회")  # 주식챠트(N분)데이터조회
+        self.mainTab.addTab(t8412_chart(), "주식챠트(N분)차트")  # 주식챠트(N분)차트
+
+        Conn().set_t8430(tr_t8430)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

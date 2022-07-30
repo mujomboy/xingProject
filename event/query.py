@@ -2,18 +2,19 @@
 # 쿼리 클래스
 class QueryEvents:
 
-    state = False
-    code = ""
+    def __init__(self):
+        self.state = False
+        self.code = ""
 
-    error = ""
-    msgCode = ""
-    msg = ""
+        self.error = ""
+        self.msgCode = ""
+        self.msg = ""
 
     def OnReceiveData(self, code):
-        QueryEvents.code = code
-        QueryEvents.state = True
+        self.code = code
+        self.state = True
 
     def OnReceiveMessage(self, error, msgCode, msg):
-        QueryEvents.error = error
-        QueryEvents.msgCode = msgCode
-        QueryEvents.msg = msg
+        self.error = error
+        self.msgCode = msgCode
+        self.msg = msg

@@ -4,10 +4,12 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QPushButton, QTableWidgetItem, QTableWidget, QVBoxLayout, QHBoxLayout, QLabel, \
     QLineEdit
 from admin import Conn
-from event.query import QueryEvents
 
 # 주식챠트(N분)데이터 조회
 class t8412(QWidget):
+
+    def __repr__(self):
+        return "주식차트데이터"
 
     def __init__(self):
         super().__init__()
@@ -18,12 +20,12 @@ class t8412(QWidget):
         self.btn = QPushButton("조회")            # 조회 버튼
         self.btn.setFixedWidth(100)             # 버튼 가로 길이 고정
 
-        lbl_code = QLabel("      종목코드 : ")     # 종목코드 라벨
+        lbl_name = QLabel("      종목명 : ")     # 종목명 라벨
         lbl_n_min = QLabel("      (N)분 : ")  # (N)분 라벨
         lbl_sdate = QLabel("      시작날짜 : ")  # 시작날짜 라벨
         lbl_edate = QLabel("      종료날짜 : ")  # 종료날짜 라벨
 
-        self.txt_code = QLineEdit("")    # 종목코드 에디트 생성
+        self.txt_name = QLineEdit("")       # 종목명 에디트 생성
         self.txt_n_min = QLineEdit("")  # (N)분 에디트 생성
         self.txt_sdate = QLineEdit("")  # 시작날짜 에디트 생성
         self.txt_edate = QLineEdit("")  # 종료날짜 에디트 생성
@@ -47,8 +49,8 @@ class t8412(QWidget):
         self.mainLayout.addLayout(self.subLayout)   # 메인레이아웃에 서브 레이아웃 배치
         self.mainLayout.addWidget(self.table)       # 메인레이아웃에 테이블 레이아웃 배치
 
-        self.subLayout.addWidget(lbl_code)  # 서브레이아웃에 라벨 배치
-        self.subLayout.addWidget(self.txt_code)  # 서브레이아웃에 에디트 배치
+        self.subLayout.addWidget(lbl_name)  # 서브레이아웃에 라벨 배치
+        self.subLayout.addWidget(self.txt_name)  # 서브레이아웃에 에디트 배치
         self.subLayout.addWidget(lbl_n_min)  # 서브레이아웃에 라벨 배치
         self.subLayout.addWidget(self.txt_n_min)  # 서브레이아웃에 에디트 배치
         self.subLayout.addWidget(lbl_sdate)  # 서브레이아웃에 라벨 배치
@@ -56,14 +58,20 @@ class t8412(QWidget):
         self.subLayout.addWidget(lbl_edate)  # 서브레이아웃에 라벨 배치
         self.subLayout.addWidget(self.txt_edate)  # 서브레이아웃에 에디트 배치
 
-
         self.subLayout.addWidget(self.btn, alignment=Qt.AlignRight)          # 서브레이아웃에 버튼 배치
 
         # 조회 버튼 클릭 시 호출할 함수 연결
         self.btn.clicked.connect(self.btn_clicked)
+        # 종목명 엔터 시 호출할 함수 연결
+        self.txt_name.returnPressed.connect(self.btn_clicked)
 
     # 조회 버튼 클릭 시 호출 함수
     def btn_clicked(self):
+
+        # 종목코드 정보 가져오기
+        code = Conn().get_code(self.txt_name.text())
+
+        Conn().add_msg(self, "조회중..")
 
         # 쿼리 이벤트 객체 가져오기
         query = Conn().get_query()
@@ -79,8 +87,8 @@ class t8412(QWidget):
         # 경로를 통해 res 파일를 로드.
         query.LoadFromResFile(resfile_path)
         # 입력 파리미터를 초기화 합니다.
-        query.SetFieldData(inblock, "shcode", 0, self.txt_code.text())      # 종목코드
-        query.SetFieldData(inblock, "ncnt", 0, self.txt_n_min.text())  # (N)분
+        query.SetFieldData(inblock, "shcode", 0, code)   # 종목코드
+        query.SetFieldData(inblock, "ncnt", 0, self.txt_n_min.text())    # (N)분
         query.SetFieldData(inblock, "sdate", 0, self.txt_sdate.text())  # 시작날짜
         query.SetFieldData(inblock, "edate", 0, self.txt_edate.text())  # 종료날짜
         query.SetFieldData(inblock, "comp_yn", 0, "N")  # 압축여부
@@ -88,12 +96,20 @@ class t8412(QWidget):
         # 조회 요청
         query.Request(0)
 
-        while not QueryEvents.state:
+        while not query.state:
             # 응답 대기
             pythoncom.PumpWaitingMessages()
 
+        Conn().add_msg(self, query.msg)
+
+        if str(query.error) != '0':
+            Conn().add_msg(self, "Error Code : " + query.msgCode)
+            Conn().add_msg(self, "Error Msg : " + query.msg)
+
+        Conn().add_msg(self, "========== END =============\n")
+
         # 응답이 왔으므로 응답 대기 관련 state 값 초기화
-        QueryEvents.state = not QueryEvents.state
+        query.state = not query.state
 
         # 리턴 해온 데이터 수 만큼 테이블 로우 개수를 초기화 해줍니다.
         self.table.setRowCount(query.GetBlockCount(outblock1))

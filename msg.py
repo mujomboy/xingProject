@@ -1,6 +1,4 @@
 from PyQt5.QtWidgets import QTextEdit
-from login import Login
-
 
 class Msg(QTextEdit):
 
@@ -12,9 +10,9 @@ class Msg(QTextEdit):
 
     # 텍스트 추가
     def add_msg(self, who, text: str):
-        # 어디서 보내온 메시지 인지 확인
-        if isinstance(who, Login):
-            text = "LOGIN : " + text
+
+        name = str(who)
+        text = name + " : " + text
 
         # 텍스트 에디트에 메시지 추가
         self.append(text)

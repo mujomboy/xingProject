@@ -1,12 +1,13 @@
 import pythoncom
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QWidget, QLabel, QHBoxLayout, QLineEdit, QPushButton, QRadioButton, QTabWidget
+from PyQt5.QtWidgets import QWidget, QLabel, QHBoxLayout, QLineEdit, QPushButton, QRadioButton
 
 from admin import Conn
-from event.session import SessionEvents
-
 
 class Login(QWidget):
+
+    def __repr__(self):
+        return "LOGIN"
 
     def __init__(self):
         super().__init__()
@@ -50,40 +51,45 @@ class Login(QWidget):
         # 버튼 클릭 시 호출할 함수 연결
         self.btn_login.clicked.connect(self.login_clicked)
 
+        # 라인에디터 Enter 시 호출할 함수 연결
+        self.txt_id.returnPressed.connect(self.login_clicked)
+        self.txt_pw.returnPressed.connect(self.login_clicked)
+
     # 세션 생성
     def create_XASession(self):
-        Conn().get_msg().add_msg(self, "Check XASession state")
+        Conn().add_msg(self, "Check XASession state")
 
         # 세션 객체 생성 여부 확인
         if not Conn().is_session():
-            Conn().get_msg().add_msg(self, "Create XASession")
+            Conn().add_msg(self, "Create XASession")
             # 세션 객체 생성
             Conn().get_session()
 
         # 서버 연결 여부 확인
         elif Conn().get_session().IsConnected():
-            Conn().get_msg().add_msg(self, "Server is Connected")
+            Conn().add_msg(self, "Server is Connected")
             # 서버 끊기
             self.disconnect_server()
 
     # 서버 끊기
     def disconnect_server(self):
-        Conn().get_msg().add_msg(self, 'Disconnected server')
-        Conn().get_session().DisconnectServer()
-        SessionEvents.state = ""
-        SessionEvents.msg = ""
+        session = Conn().get_session()
+        Conn().add_msg(self, 'Disconnected server')
+        session.DisconnectServer()
+        session.state = ""
+        session.msg = ""
 
     # 서버 연결
     def connect_server(self):
-        Conn().get_msg().add_msg(self, 'Request server connect')
+        Conn().add_msg(self, 'Request server connect')
 
         # 접속 URL
         url = 'demo.ebestsec.co.kr'  # 모의 투자
         if self.rdo_real.isChecked():
             url = 'hts.ebestsec.co.kr'  # 실제 투자
 
-        Conn().get_msg().add_msg(self, "URL : " + url)
-        Conn().get_msg().add_msg(self, "PORT : " + self.txt_port.text())
+        Conn().add_msg(self, "URL : " + url)
+        Conn().add_msg(self, "PORT : " + self.txt_port.text())
 
         # 서버 연결 요청 (URL, 포트 번호 전달)
         result = Conn().get_session().ConnectServer(url, int(self.txt_port.text()))
@@ -92,45 +98,47 @@ class Login(QWidget):
         if not result:
             # 연결 실패 시
             info = self.get_error_info()
-            Conn().get_msg().add_msg(self, "Connect Failed")
-            Conn().get_msg().add_msg(self, "Error Code : " + info[0])
-            Conn().get_msg().add_msg(self, "Error Msg : " + info[1])
+            Conn().add_msg(self, "Connect Failed")
+            Conn().add_msg(self, "Error Code : " + info[0])
+            Conn().add_msg(self, "Error Msg : " + info[1])
             if Conn().get_session().IsConnected():
                 self.disconnect_server()
 
             return False
 
-        Conn().get_msg().add_msg(self, "Server Connect Success")
+        Conn().add_msg(self, "Server Connect Success")
         return True
 
     # 로그인 진행
     def login(self):
-        Conn().get_msg().add_msg(self, "Login Attempt")
+        session = Conn().get_session()
+
+        Conn().add_msg(self, "Login Attempt")
 
         # 이베스트 로그인
-        Conn().get_msg().add_msg(self, "ID : " + self.txt_id.text())
-        Conn().get_msg().add_msg(self, "PWD : " + self.txt_pw.text())
-        Conn().get_msg().add_msg(self, "CERT : " + self.txt_cert.text())
+        Conn().add_msg(self, "ID : " + self.txt_id.text())
+        Conn().add_msg(self, "PWD : " + self.txt_pw.text())
+        Conn().add_msg(self, "CERT : " + self.txt_cert.text())
 
         # 세션 로그인 요청
-        Conn().get_session().Login(self.txt_id.text(), self.txt_pw.text(), self.txt_cert.text(), 0, 0)
+        session.Login(self.txt_id.text(), self.txt_pw.text(), self.txt_cert.text(), 0, 0)
 
-        Conn().get_msg().add_msg(self, 'Wait....')
-        while SessionEvents.state == "":
+        Conn().add_msg(self, 'Wait....')
+        while session.state == "":
             # 로그인 상태 변경 메시지 채크
             pythoncom.PumpWaitingMessages()
 
         is_success = False
 
-        if SessionEvents.state == "0000":
+        if session.state == "0000":
             is_success = True
-            Conn().get_msg().add_msg(self, 'Login Success')
+            Conn().add_msg(self, 'Login Success')
         else:
-            Conn().get_msg().add_msg(self, "Login Failed")
-            Conn().get_msg().add_msg(self, "Error Code : " + SessionEvents.state)
-            Conn().get_msg().add_msg(self, "Error Msg : " + SessionEvents.msg)
+            Conn().add_msg(self, "Login Failed")
+            Conn().add_msg(self, "Error Code : " + session.state)
+            Conn().add_msg(self, "Error Msg : " + session.msg)
 
-        Conn().get_msg().add_msg(self, "========== END =============\n")
+        Conn().add_msg(self, "========== END =============\n")
 
         return is_success
 
