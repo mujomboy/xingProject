@@ -1,7 +1,8 @@
 import pythoncom
-from PyQt5.QtChart import QChart, QChartView, QCandlestickSeries, QCandlestickSet, QDateTimeAxis, QValueAxis
-from PyQt5.QtCore import Qt, QDateTime
-from PyQt5.QtGui import QPainter
+from PyQt5.QtChart import QChart, QChartView, QCandlestickSeries, QCandlestickSet, QDateTimeAxis, QValueAxis, \
+    QLineSeries
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPainter, QPen, QBrush
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QLineEdit
 
 from admin import Conn
@@ -35,21 +36,8 @@ class t8412_chart(QWidget):
         self.txt_sdate.setPlaceholderText("ex) 20220701")
         self.txt_edate.setPlaceholderText("ex) 20220701")
 
-        # ========================================== 챠트 ==========================================
-        self.chart = QChart()                # 차트
-        self.chart.legend().hide()
-
-        self.axis_x = QDateTimeAxis()
-        self.axis_x.setFormat("hh:mm:ss")
-
-        self.axis_y = QValueAxis()
-        self.axis_y.setLabelFormat("%i")
-
-
-
-        self.chart_view = QChartView(self.chart)  # 차트뷰
+        self.chart_view = QChartView()
         self.chart_view.setRenderHint(QPainter.Antialiasing)
-        # ========================================== 챠트 ==========================================
 
         self.mainLayout.addLayout(self.subLayout)  # 메인레이아웃에 서브 레이아웃 배치
         self.mainLayout.addWidget(self.chart_view)           # 메인레이아웃에 차트 배치
@@ -92,6 +80,9 @@ class t8412_chart(QWidget):
 
         # 경로를 통해 res 파일를 로드.
         query.LoadFromResFile(resfile_path)
+
+        print(query.state, code)
+
         # 입력 파리미터를 초기화 합니다.
         query.SetFieldData(inblock, "shcode", 0, code)  # 종목코드
         query.SetFieldData(inblock, "ncnt", 0, self.txt_n_min.text())  # (N)분
@@ -115,28 +106,46 @@ class t8412_chart(QWidget):
         Conn().add_msg(self, "========== END =============\n")
 
         # 응답이 왔으므로 응답 대기 관련 state 값 초기화
-        query.state = not query.state
+        query.state = False
 
-        self.chart.removeAllSeries()
+        # 데이터 가공
+        Conn().get_data().init_t8412(query, outblock1)
 
-        series = QCandlestickSeries()           # 캔들스틱 시리즈
-        series.setIncreasingColor(Qt.red)       # 상승시 색상
-        series.setDecreasingColor(Qt.blue)      # 하락시 색상
+        chart = QChart()  # 차트 생성
+        chart.legend().hide()
+
+        ma_list = [5, 15, 30, 60]
+        color_list = [Qt.red, Qt.green, Qt.blue, Qt.yellow]
+
+        for i in range(len(ma_list)):
+
+            # 라인 시리즈 생성
+            line_series = QLineSeries()
+
+            pen = QPen()
+            pen.setWidth(2)
+            pen.setColor(color_list[i])
+            line_series.setPen(pen)
+
+            for list in Conn().get_data().get_t8412_avg_list(ma_list[i]):
+                line_series.append(list[1], list[0])
+
+            # 시리즈 연결
+            chart.addSeries(line_series)
+
+        # 캔들 시리즈 생성
+        candle_series = QCandlestickSeries()  # 캔들스틱 시리즈
+        candle_series.setIncreasingColor(Qt.red)  # 상승시 색상
+        candle_series.setDecreasingColor(Qt.blue)  # 하락시 색상
+        candle_series.setBodyWidth(.8)
+
+        for list in Conn().get_data().get_t8412_candle_list():
+            candle_series.append(QCandlestickSet(float(list[0]), float(list[1]), float(list[2]), float(list[3]), float(list[4])))
+
+        # 시리즈 연결
+        chart.addSeries(candle_series)
+        chart.createDefaultAxes()
+
+        self.chart_view.setChart(chart)
 
 
-        for i in range(query.GetBlockCount(outblock1)):
-            date = query.GetFieldData(outblock1, "date", i).strip()  # 날짜
-            time = query.GetFieldData(outblock1, "time", i).strip()  # 시간
-            open = query.GetFieldData(outblock1, "open", i).strip()  # 시가
-            high = query.GetFieldData(outblock1, "high", i).strip()  # 고가
-            low = query.GetFieldData(outblock1, "low", i).strip()  # 저가
-            close = query.GetFieldData(outblock1, "close", i).strip()  # 종가
-            dt = QDateTime.fromString(date+time, "yyyyMMddhhmmss")
-            series.append(QCandlestickSet(float(open), float(high), float(low), float(close), dt.toMSecsSinceEpoch()))
-
-        self.chart.addSeries(series)  # 시리즈 연결
-        self.chart.addAxis(self.axis_x, Qt.AlignBottom)  # x축 좌표 설정
-        self.chart.addAxis(self.axis_y, Qt.AlignLeft)  # y축 좌표 설정
-
-        series.attachAxis(self.axis_x)
-        series.attachAxis(self.axis_y)

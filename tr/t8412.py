@@ -3,7 +3,9 @@ import pythoncom
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QPushButton, QTableWidgetItem, QTableWidget, QVBoxLayout, QHBoxLayout, QLabel, \
     QLineEdit
+
 from admin import Conn
+
 
 # 주식챠트(N분)데이터 조회
 class t8412(QWidget):

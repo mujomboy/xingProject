@@ -6,11 +6,10 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QTa
 from admin import Conn
 from login import Login
 from msg import Msg
+from tr.t8412 import t8412
 from tr.t8412_chart import t8412_chart
 from tr.t8424 import t8424
 from tr.t8430 import t8430
-from tr.t8412 import t8412
-
 
 
 class MainScreen(QMainWindow):

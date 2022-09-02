@@ -2,7 +2,9 @@
 import pythoncom
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QPushButton, QTableWidgetItem, QTableWidget, QVBoxLayout, QHBoxLayout
+
 from admin import Conn
+
 
 # 주식종목조회 클래스
 class t8430(QWidget):

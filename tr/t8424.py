@@ -2,7 +2,9 @@
 import pythoncom
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTableWidget, QHBoxLayout, QPushButton, QTableWidgetItem
+
 from admin import Conn
+
 
 # 업종전체조회 클래스
 class t8424(QWidget):

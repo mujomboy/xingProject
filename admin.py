@@ -2,8 +2,11 @@ import os.path
 import sys
 
 import win32com.client
-from event.session import SessionEvents
+
+from data import Data
 from event.query import QueryEvents
+from event.session import SessionEvents
+
 
 class Conn:
 
@@ -23,6 +26,8 @@ class Conn:
             self.__dic = {}
 
             self.__t8430 = None
+
+            self.__data = Data()
 
     # =========================================== MSG ===============================================
 
@@ -89,6 +94,8 @@ class Conn:
 
         if self.__dic.__contains__(key):
             return self.__dic[key]
+        else:
+            print("????")
 
         return ""
 
@@ -96,3 +103,7 @@ class Conn:
     # t8430 종목 조회 클래스
     def set_t8430(self, tr):
         self.__t8430 = tr
+
+    # =========================================== DATA ===============================================
+    def get_data(self):
+        return self.__data

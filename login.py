@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QWidget, QLabel, QHBoxLayout, QLineEdit, QPushButton
 
 from admin import Conn
 
+
 class Login(QWidget):
 
     def __repr__(self):
